@@ -1,0 +1,15 @@
+{
+  "name": "HydrogenMap",
+  "short_name": "HydrogenMap",
+  "description": "Find hydrogen fueling stations worldwide. H2 news, cost calculator & investment info.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001F6B",
+  "theme_color": "#0057FF",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["maps", "travel", "utilities"],
+  "lang": "en"
+}
