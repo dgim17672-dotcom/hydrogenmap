@@ -606,17 +606,17 @@
       <div class="section-more" onclick="switchTab('news')">More →</div>
     </div>
     <div class="news-scroll">
-      <div class="news-card hot">
+      <div class="news-card hot" onclick="openNews('https://www.google.com/search?q=Korea+hydrogen+stations+2027')">
         <div class="news-tag">🔥 TRENDING</div>
         <div class="news-title">Korea to add 300 hydrogen stations by 2027</div>
         <div class="news-time">2 hours ago</div>
       </div>
-      <div class="news-card">
+      <div class="news-card" onclick="openNews('https://www.google.com/search?q=Toyota+Mirai+sales+2026')">
         <div class="news-tag">📈 MARKET</div>
         <div class="news-title">Toyota Mirai sales up 40% — hydrogen momentum growing</div>
         <div class="news-time">5 hours ago</div>
       </div>
-      <div class="news-card">
+      <div class="news-card" onclick="openNews('https://www.google.com/search?q=EU+hydrogen+infrastructure+fund')">
         <div class="news-tag">🌍 GLOBAL</div>
         <div class="news-title">EU approves €2B hydrogen infrastructure fund</div>
         <div class="news-time">1 day ago</div>
@@ -630,32 +630,32 @@
   <div class="section" style="padding-top:20px">
     <div class="section-title" style="margin-bottom:16px;font-family:'Syne',sans-serif;font-size:20px">H₂ News & Market</div>
 
-    <div class="news-card hot" style="min-width:auto;margin-bottom:12px">
+    <div class="news-card hot" style="min-width:auto;margin-bottom:12px" onclick="openNews('https://www.google.com/search?q=Korea+hydrogen+stations+2027')">
       <div class="news-tag">🔥 TRENDING</div>
       <div class="news-title" style="font-size:15px">Korea to add 300 hydrogen stations by 2027 — government pledges ₩2 trillion</div>
       <div class="news-time">2 hours ago · Ministry of Environment</div>
     </div>
-    <div class="news-card" style="min-width:auto;margin-bottom:12px">
+    <div class="news-card" style="min-width:auto;margin-bottom:12px" onclick="openNews('https://www.google.com/search?q=Toyota+Mirai+sales+2026')">
       <div class="news-tag">📈 MARKET</div>
       <div class="news-title" style="font-size:15px">Toyota Mirai global sales up 40% Q1 2026 — hydrogen momentum growing fast</div>
       <div class="news-time">5 hours ago · Reuters</div>
     </div>
-    <div class="news-card" style="min-width:auto;margin-bottom:12px">
+    <div class="news-card" style="min-width:auto;margin-bottom:12px" onclick="openNews('https://www.google.com/search?q=EU+hydrogen+infrastructure+fund+2B')">
       <div class="news-tag">🌍 GLOBAL</div>
       <div class="news-title" style="font-size:15px">EU approves €2B hydrogen infrastructure fund — 1,000 stations by 2030</div>
       <div class="news-time">1 day ago · European Commission</div>
     </div>
-    <div class="news-card" style="min-width:auto;margin-bottom:12px">
+    <div class="news-card" style="min-width:auto;margin-bottom:12px" onclick="openNews('https://www.google.com/search?q=Hyundai+NEXO+2nd+gen+2026')">
       <div class="news-tag">🚗 VEHICLES</div>
       <div class="news-title" style="font-size:15px">Hyundai NEXO 2nd gen specs leaked — 800km range on single fill</div>
       <div class="news-time">2 days ago · Auto Industry</div>
     </div>
-    <div class="news-card hot" style="min-width:auto;margin-bottom:12px">
+    <div class="news-card hot" style="min-width:auto;margin-bottom:12px" onclick="openNews('https://www.google.com/search?q=hydrogen+ETF+2026+returns')">
       <div class="news-tag">💰 INVEST</div>
       <div class="news-title" style="font-size:15px">Hydrogen ETFs return 5-10% in 2026 — analysts predict continued growth</div>
       <div class="news-time">3 days ago · Bloomberg</div>
     </div>
-    <div class="news-card" style="min-width:auto;margin-bottom:12px">
+    <div class="news-card" style="min-width:auto;margin-bottom:12px" onclick="openNews('https://www.google.com/search?q=Japan+liquid+hydrogen+terminal+Kobe+2026')">
       <div class="news-tag">🏭 INDUSTRY</div>
       <div class="news-title" style="font-size:15px">Japan opens world's largest liquid hydrogen terminal in Kobe port</div>
       <div class="news-time">4 days ago · Nikkei</div>
@@ -762,7 +762,7 @@
   <div class="profile-header">
     <div class="avatar">H₂</div>
     <div class="profile-name">H₂ Explorer</div>
-    <div class="profile-sub">Free Plan · Joined May 2026</div>
+    <div class="profile-sub" id="profile-joined">Free Plan · Member</div>
   </div>
 
   <div class="section">
@@ -858,8 +858,8 @@
         <div class="mg-lbl">Pressure</div>
       </div>
     </div>
-    <button class="nav-btn">🗺️ Get Directions</button>
-    <button style="width:100%;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;margin-top:10px">⭐ Save to Favorites</button>
+    <button class="nav-btn" id="modal-directions-btn" onclick="openDirections()">🗺️ Get Directions</button>
+    <button style="width:100%;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;margin-top:10px" onclick="saveToFavorites()">⭐ Save to Favorites</button>
   </div>
 </div>
 
@@ -885,7 +885,7 @@
       <div class="amount">$4.99</div>
       <div class="period">per month · cancel anytime</div>
     </div>
-    <button class="pro-lock-btn" style="width:100%;padding:16px;font-size:17px">Start Free Trial →</button>
+    <button class="pro-lock-btn" style="width:100%;padding:16px;font-size:17px" onclick="startFreeTrial()">Start Free Trial →</button>
     <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray)">3-day free trial · No charge until trial ends</div>
   </div>
 </div>
@@ -898,16 +898,42 @@ setTimeout(() => {
   setTimeout(() => s.style.display = 'none', 600);
 }, 2000);
 
-// Tab switching
+// Dynamic profile joined date
+(function() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date();
+  const el = document.getElementById('profile-joined');
+  if (el) el.textContent = 'Free Plan · Member since ' + months[now.getMonth()] + ' ' + now.getFullYear();
+})();
+
+// Tab switching with Android back button support
 function switchTab(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + tab).classList.add('active');
   document.getElementById('nav-' + tab).classList.add('active');
+  history.pushState({ tab: tab }, '', '#' + tab);
 }
 
+// Handle Android back button
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.tab) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + e.state.tab).classList.add('active');
+    document.getElementById('nav-' + e.state.tab).classList.add('active');
+  } else {
+    switchTab('map');
+  }
+});
+
 // Modals
+let currentStationName = '';
+let currentStationAddr = '';
+
 function openStation(name, addr, dist, status, price, type) {
+  currentStationName = name;
+  currentStationAddr = addr;
   document.getElementById('modal-name').textContent = name;
   document.getElementById('modal-addr').textContent = addr + ' · ' + dist + 'km away';
   const stEl = document.getElementById('modal-status');
@@ -917,18 +943,58 @@ function openStation(name, addr, dist, status, price, type) {
   document.getElementById('modal-type').textContent = type;
   document.getElementById('stationModal').classList.add('open');
 }
+
+function openDirections() {
+  const query = encodeURIComponent(currentStationName + ' ' + currentStationAddr + ' hydrogen station');
+  window.open('https://maps.google.com/maps?q=' + query, '_blank');
+}
+
+function saveToFavorites() {
+  alert('⭐ ' + currentStationName + ' saved to Favorites!\n\nUpgrade to Pro to access all saved stations.');
+}
+
 function openPro() { document.getElementById('proModal').classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// Calculator
+function startFreeTrial() {
+  alert('⚡ Free Trial\n\nIn-app purchase coming soon!\nThank you for your interest in HydrogenMap Pro.');
+  closeModal('proModal');
+}
+
+// News links
+function openNews(url) {
+  window.open(url, '_blank');
+}
+
+// Search
+document.querySelector('.search-bar input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const q = this.value.trim();
+    if (q) {
+      alert('🔍 Searching for: ' + q + '\n\nFull search available in Pro version.');
+    }
+  }
+});
+
+// Calculator with validation
 function doCalc() {
-  const dist = parseFloat(document.getElementById('calcDist').value) || 100;
-  const h2kg = parseFloat(document.getElementById('calcH2').value) || 0.95;
-  const h2price = parseFloat(document.getElementById('calcPrice').value) || 8800;
-  const gasPrice = parseFloat(document.getElementById('calcGas').value) || 1700;
+  const distEl = document.getElementById('calcDist');
+  const h2kgEl = document.getElementById('calcH2');
+  const h2priceEl = document.getElementById('calcPrice');
+  const gasEl = document.getElementById('calcGas');
+
+  const dist = parseFloat(distEl.value);
+  const h2kg = parseFloat(h2kgEl.value);
+  const h2price = parseFloat(h2priceEl.value);
+  const gasPrice = parseFloat(gasEl.value);
+
+  if (!dist || dist <= 0) { distEl.focus(); alert('Please enter a valid distance.'); return; }
+  if (!h2kg || h2kg <= 0) { h2kgEl.focus(); alert('Please enter valid H₂ consumption.'); return; }
+  if (!h2price || h2price <= 0) { h2priceEl.focus(); alert('Please enter a valid H₂ price.'); return; }
+  if (!gasPrice || gasPrice <= 0) { gasEl.focus(); alert('Please enter a valid gasoline price.'); return; }
 
   const h2cost = Math.round((dist / 100) * h2kg * h2price);
-  const gasFuelEff = 12; // km/L
+  const gasFuelEff = 12;
   const gasCost = Math.round((dist / gasFuelEff) * gasPrice);
   const save = Math.round((1 - h2cost / gasCost) * 100);
 
@@ -938,11 +1004,46 @@ function doCalc() {
      <div class="r-lbl">H₂ cost for ${dist}km · vs Gasoline ${fmt(gasCost)} · Save ${save}%</div>`;
 }
 
-// Region tabs
+// Region tabs with data change
+const regionData = {
+  '🇰🇷 Korea': { stations: 12, open: 8, nearest: 'Seoul H2 Station', dist: '0.8', price: '₩8,800' },
+  '🇯🇵 Japan': { stations: 24, open: 19, nearest: 'Tokyo H2 Station', dist: '1.2', price: '¥1,100' },
+  '🇺🇸 USA':   { stations: 68, open: 52, nearest: 'LA H2 Station',    dist: '2.4', price: '$8.50' },
+  '🇪🇺 Europe': { stations: 31, open: 25, nearest: 'Berlin H2 Hub',    dist: '3.1', price: '€12.50' },
+};
+
 document.querySelectorAll('.region-tab').forEach(t => {
   t.addEventListener('click', () => {
     document.querySelectorAll('.region-tab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
+    const d = regionData[t.textContent.trim()];
+    if (d) {
+      const vals = document.querySelectorAll('.map-stat .val');
+      if (vals[0]) vals[0].textContent = d.stations;
+      if (vals[1]) vals[1].textContent = d.open;
+      const nearestName = document.querySelector('.nearest-name');
+      const nearestDist = document.querySelector('.nearest-dist');
+      const nearestPrice = document.querySelector('.meta-chip.blue .mc-val');
+      if (nearestName) nearestName.textContent = d.nearest;
+      if (nearestDist) nearestDist.textContent = d.dist + ' km away';
+      if (nearestPrice) nearestPrice.textContent = d.price;
+    }
+  });
+});
+
+// Settings items feedback
+document.querySelectorAll('.setting-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const label = this.querySelector('.si-label');
+    if (!label) return;
+    const name = label.textContent;
+    if (name === 'Privacy Policy') {
+      window.open('https://www.google.com/search?q=HydrogenMap+privacy+policy', '_blank');
+    } else if (name === 'About HydrogenMap') {
+      alert('HydrogenMap v1.0\n\nFind hydrogen stations worldwide.\n© 2026 HydrogenMap');
+    } else {
+      alert('⚙️ ' + name + ' settings coming soon!');
+    }
   });
 });
 </script>
