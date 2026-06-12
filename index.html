@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HydrogenMap - Find H₂ Stations Worldwide</title>
+<meta name="description" content="Find hydrogen fuel stations near you. Real-time availability, pricing, and directions for H₂ stations worldwide.">
+<meta property="og:title" content="HydrogenMap - Find H₂ Stations Worldwide">
+<meta property="og:description" content="Find hydrogen fuel stations near you. Real-time H₂ pricing and directions.">
+<meta property="og:type" content="website">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --blue: #0057FF; --blue-dark: #003CBF; --blue-light: #4D8AFF;
+    --sky: #87CEEB; --sky-pale: #EAF4FF;
+    --white: #FFFFFF; --slate: #1A2540; --slate-mid: #2E3D5C;
+    --gray: #8A9BB8; --gray-light: #F0F5FF;
+    --green: #00C48C; --orange: #FF6B35; --gold: #FFB800;
+    --radius: 20px; --radius-sm: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'DM Sans', sans-serif; background-color: var(--gray-light); color: var(--slate); overflow: hidden; height: 100vh; }
+  h1, h2, h3, .brand-text { font-family: 'Syne', sans-serif; font-weight: 700; }
+
+  #splash { position: fixed; top:0; left:0; width:100vw; height:100vh; background: linear-gradient(135deg, var(--blue), var(--slate)); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease; }
+  .splash-logo { width: 96px; height: 96px; background: var(--white); border-radius: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 32px rgba(0,87,255,0.3); margin-bottom: 20px; font-size: 44px; }
+  .splash-title { color: var(--white); font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .splash-tag { color: var(--sky); font-size: 14px; margin-top: 6px; font-weight: 500; }
+
+  .app-container { display: flex; flex-direction: column; height: 100vh; position: relative; max-width: 480px; margin: 0 auto; background: var(--white); box-shadow: 0 0 32px rgba(0,0,0,0.05); }
+  .content-area { flex: 1; overflow-y: auto; position: relative; padding-bottom: 90px; }
+  .page { display: none; flex-direction: column; }
+  .page.active { display: flex; }
+
+  .nav-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(0,87,255,0.08); display: flex; justify-content: space-around; align-items: center; padding: 0 12px; z-index: 2000; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray); font-size: 11px; font-weight: 500; width: 64px; height: 100%; transition: color 0.3s ease; cursor: pointer; }
+  .nav-item svg { width: 22px; height: 22px; margin-bottom: 5px; stroke: currentColor; fill: none; stroke-width: 2; transition: transform 0.2s ease; }
+  .nav-item.active { color: var(--blue); font-weight: 600; }
+  .nav-item.active svg { transform: translateY(-2px); }
+
+  .header { padding: 20px 20px 10px; display: flex; align-items: center; justify-content: space-between; background: var(--white); }
+  .brand-text { font-size: 22px; color: var(--slate); letter-spacing: -0.5px; }
+  .pro-badge { background: linear-gradient(135deg, var(--gold), #FF8A00); color: var(--white); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; }
+
+  .region-tabs { display: flex; gap: 8px; padding: 0 20px 15px; overflow-x: auto; scrollbar-width: none; }
+  .region-tabs::-webkit-scrollbar { display: none; }
+  .region-tab { padding: 8px 16px; background: var(--gray-light); border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; color: var(--slate-mid); white-space: nowrap; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; }
+  .region-tab.active { background: var(--sky-pale); color: var(--blue); border-color: rgba(0,87,255,0.15); font-weight: 600; }
+
+  .map-wrapper { position: relative; height: 240px; margin: 0 20px; border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 24px rgba(0,87,255,0.06); border: 1px solid var(--gray-light); }
+  #map { width: 100%; height: 100%; z-index: 1; }
+  .map-stat { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: var(--radius-sm); z-index: 1000; font-size: 11px; font-weight: 500; display: flex; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .map-stat .val { font-weight: 700; color: var(--blue); }
+
+  .section { padding: 24px 20px 10px; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .section-title { font-size: 16px; color: var(--slate); font-weight: 700; }
+  .section-more { font-size: 12px; color: var(--blue); font-weight: 500; cursor: pointer; }
+
+  .nearest-card { background: var(--slate); color: var(--white); padding: 20px; border-radius: var(--radius); position: relative; overflow: hidden; box-shadow: 0 12px 28px rgba(26,37,64,0.15); }
+  .nearest-card::before { content: ''; position: absolute; top: -50px; right: -50px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(0,87,255,0.2) 0%, transparent 70%); pointer-events: none; }
+  .nc-lbl { font-size: 11px; text-transform: uppercase; color: var(--sky); font-weight: 600; letter-spacing: 1px; margin-bottom: 4px; }
+  .nearest-name { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+  .nearest-dist { font-size: 13px; color: var(--gray); margin-bottom: 15px; }
+  .nc-meta { display: flex; gap: 8px; }
+  .meta-chip { padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .meta-chip.blur { background: rgba(255,255,255,0.08); color: var(--white); }
+  .meta-chip.blue { background: var(--blue); color: var(--white); }
+  .mc-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+
+  .station-card { background: var(--white); border: 1px solid var(--gray-light); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 10px; cursor: pointer; transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 10px; }
+  .station-card:active { transform: scale(0.98); }
+  .sc-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .sc-name { font-size: 14px; font-weight: 600; color: var(--slate); }
+  .sc-dist { font-size: 12px; color: var(--gray); font-weight: 500; }
+  .sc-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+  .badge.open { background: #E6F9F4; color: var(--green); }
+  .badge.busy { background: #FFF0EB; color: var(--orange); }
+  .badge.closed { background: #F0F0F0; color: var(--gray); }
+  .badge.price { background: var(--gray-light); color: var(--slate-mid); }
+  .badge.type { background: #EAF4FF; color: var(--blue); }
+
+  .calc-box { background: var(--white); border: 1px solid var(--gray-light); padding: 20px; border-radius: var(--radius); margin: 0 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--slate-mid); margin-bottom: 6px; }
+  .input-wrapper { position: relative; display: flex; align-items: center; }
+  .input-wrapper input { width: 100%; padding: 12px 14px; border: 1px solid var(--gray-light); background: var(--gray-light); border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; color: var(--slate); outline: none; transition: all 0.2s ease; }
+  .input-wrapper input:focus { background: var(--white); border-color: var(--blue-light); box-shadow: 0 0 0 3px rgba(0,87,255,0.06); }
+  .input-unit { position: absolute; right: 14px; font-size: 12px; color: var(--gray); font-weight: 500; pointer-events: none; }
+  .btn-calc { width: 100%; background: var(--blue); color: var(--white); border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .calc-result { margin-top: 20px; padding: 16px; background: var(--sky-pale); border-radius: var(--radius-sm); text-align: center; border: 1px dashed rgba(0,87,255,0.2); }
+  .r-val { font-size: 24px; font-weight: 800; color: var(--blue); margin-bottom: 2px; }
+  .r-lbl { font-size: 11px; color: var(--slate-mid); font-weight: 500; }
+
+  .profile-card { display: flex; align-items: center; gap: 16px; padding: 20px; margin: 0 20px 10px; background: var(--gray-light); border-radius: var(--radius); }
+  .avatar { width: 54px; height: 54px; background: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--white); font-size: 20px; font-weight: 700; }
+  .profile-info { display: flex; flex-direction: column; }
+  .profile-name { font-size: 16px; font-weight: 700; color: var(--slate); }
+  .profile-status { font-size: 12px; color: var(--gray); font-weight: 500; margin-top: 1px; }
+  .settings-group { margin: 15px 20px; background: var(--white); border: 1px solid var(--gray-light); border-radius: var(--radius); overflow: hidden; }
+  .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--gray-light); cursor: pointer; }
+  .setting-item:last-child { border-bottom: none; }
+  .si-left { display: flex; align-items: center; gap: 12px; color: var(--slate-mid); }
+  .si-left svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .si-label { font-size: 13px; font-weight: 500; }
+  .si-chevron { color: var(--gray); width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(26,37,64,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 3000; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .modal-sheet { width: 100%; max-width: 480px; margin: 0 auto; background: var(--white); border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); padding: 24px 20px 34px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.7, 0.1, 1); }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-drag { width: 36px; height: 4px; background: var(--gray-light); border-radius: 2px; margin: -12px auto 16px; }
+  .modal-title { font-size: 20px; font-weight: 700; color: var(--slate); margin-bottom: 2px; }
+  .modal-desc { font-size: 13px; color: var(--gray); margin-bottom: 20px; font-weight: 500; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .mg-item { background: var(--gray-light); padding: 12px; border-radius: var(--radius-sm); }
+  .mg-lbl { font-size: 10px; text-transform: uppercase; color: var(--gray); font-weight: 600; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .mg-val { font-size: 14px; font-weight: 600; color: var(--slate); }
+  .modal-action { display: grid; grid-template-columns: 1fr 3fr; gap: 10px; }
+  .btn-sec { background: var(--gray-light); color: var(--slate); border: none; padding: 14px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; text-align: center; }
+  .btn-pri { background: var(--blue); color: var(--white); border: none; padding: 14px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-logo">⚡</div>
+  <div class="splash-title">HydrogenMap</div>
+  <div class="splash-tag">H₂ Infrastructure Network</div>
+</div>
+
+<div class="app-container">
+  <div class="content-area">
+
+    <div id="page-map" class="page active">
+      <div class="header">
+        <div class="brand-text">HydrogenMap</div>
+        <div class="pro-badge" onclick="openPro()">Go Pro</div>
+      </div>
+      <div class="region-tabs">
+        <div class="region-tab active" data-region="korea">🇰🇷 Korea</div>
+        <div class="region-tab" data-region="japan">🇯🇵 Japan</div>
+        <div class="region-tab" data-region="usa">🇺🇸 USA</div>
+        <div class="region-tab" data-region="europe">🇪🇺 Europe</div>
+      </div>
+      <div class="map-wrapper">
+        <div id="map"></div>
+        <div class="map-stat">
+          Stations: <span class="val" id="stat-total">12</span> &nbsp; Active: <span class="val" id="stat-active">8</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="nc-lbl">📍 Nearest Station</div>
+        <div class="nearest-card">
+          <div class="nearest-name" id="near-name">Seoul H2 Hub</div>
+          <div class="nearest-dist" id="near-dist">0.8 km away</div>
+          <div class="nc-meta">
+            <div class="meta-chip blur"><div class="mc-dot"></div><span id="near-status">Open</span></div>
+            <div class="meta-chip blue"><span id="near-price">₩8,800/kg</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div id="nearby-list-container"></div>
+      </div>
+    </div>
+
+    <div id="page-calc" class="page">
+      <div class="header"><div class="brand-text">H₂ Calculator</div></div>
+      <div class="calc-box">
+        <div class="form-group">
+          <label>Target Trip Distance</label>
+          <div class="input-wrapper"><input type="number" id="calcDist" value="100"><div class="input-unit">km</div></div>
+        </div>
+        <div class="form-group">
+          <label>H₂ Consumption Rate</label>
+          <div class="input-wrapper"><input type="number" id="calcH2" value="1.0" step="0.1"><div class="input-unit">kg/100km</div></div>
+        </div>
+        <div class="form-group">
+          <label>Local H₂ Price</label>
+          <div class="input-wrapper"><input type="number" id="calcPrice" value="8800"><div class="input-unit">₩/kg</div></div>
+        </div>
+        <div class="form-group">
+          <label>Gasoline Price (comparison)</label>
+          <div class="input-wrapper"><input type="number" id="calcGas" value="1650"><div class="input-unit">₩/L</div></div>
+        </div>
+        <button class="btn-calc" onclick="doCalc()">Calculate Trip Cost</button>
+        <div class="calc-result" id="calcResult">
+          <div class="r-val">₩8,800</div>
+          <div class="r-lbl">Estimated cost vs internal combustion engine</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-profile" class="page">
+      <div class="header"><div class="brand-text">My Profile</div></div>
+      <div class="profile-card">
+        <div class="avatar">H</div>
+        <div class="profile-info">
+          <div class="profile-name">HydrogenMap User</div>
+          <div class="profile-status" id="profile-joined">Free Plan · Member since --</div>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="si-left">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div class="si-label">Account Management</div>
+          </div>
+          <svg class="si-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="setting-item">
+          <div class="si-left">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="si-label">Privacy Policy</div>
+          </div>
+          <svg class="si-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="setting-item">
+          <div class="si-left">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="si-label">About HydrogenMap</div>
+          </div>
+          <svg class="si-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nav-bar">
+    <div id="nav-map" class="nav-item active" onclick="switchTab('map')">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      Map
+    </div>
+    <div id="nav-calc" class="nav-item" onclick="switchTab('calc')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      Calculator
+    </div>
+    <div id="nav-profile" class="nav-item" onclick="switchTab('profile')">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </div>
+  </div>
+</div>
+
+<!-- Station Modal -->
+<div id="stationModal" class="modal-overlay" onclick="if(event.target===this) closeModal('stationModal')">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <div class="modal-title" id="modal-name">Station Name</div>
+    <div class="modal-desc" id="modal-addr">Loading...</div>
+    <div class="modal-grid">
+      <div class="mg-item"><div class="mg-lbl">Status</div><div class="mg-val" id="modal-status">Open</div></div>
+      <div class="mg-item"><div class="mg-lbl">Price</div><div class="mg-val" id="modal-price">₩8,800/kg</div></div>
+      <div class="mg-item"><div class="mg-lbl">Connector</div><div class="mg-val" id="modal-type">700 bar</div></div>
+      <div class="mg-item"><div class="mg-lbl">Payment</div><div class="mg-val">Credit, App Pay</div></div>
+    </div>
+    <div class="modal-action">
+      <button class="btn-sec" onclick="saveToFavorites()">⭐ Save</button>
+      <button class="btn-pri" onclick="openDirections()">Get Directions (OSM)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pro Modal -->
+<div id="proModal" class="modal-overlay" onclick="if(event.target===this) closeModal('proModal')">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <div class="modal-title">💎 HydrogenMap Pro</div>
+    <div class="modal-desc">Unlock realtime premium H₂ network data worldwide.</div>
+    <div style="background:var(--gray-light); padding:16px; border-radius:var(--radius-sm); margin-bottom:20px; font-size:13px; color:var(--slate-mid); display:flex; flex-direction:column; gap:8px;">
+      <div>✓ Real-time dispenser occupancy status</div>
+      <div>✓ Push alerts for station downtime</div>
+      <div>✓ Multi-stop route optimization</div>
+    </div>
+    <button class="btn-pri" style="width:100%;" onclick="startFreeTrial()">Start 7-Day Free Trial</button>
+  </div>
+</div>
+
+<script>
+// ── 데이터 ──
+const regionMeta = {
+  korea:  { stations: 12, open: 8,  nearest: 'Seoul H2 Hub',        dist: '0.8', price: '₩8,800/kg' },
+  japan:  { stations: 24, open: 19, nearest: 'Tokyo Bay Station',   dist: '1.2', price: '¥1,100/kg'  },
+  usa:    { stations: 68, open: 52, nearest: 'LA Tech Center H2',   dist: '2.4', price: '$8.50/kg'   },
+  europe: { stations: 31, open: 25, nearest: 'Berlin Core Station', dist: '3.1', price: '€12.50/kg'  }
+};
+const regionCenters = {
+  korea:  [37.5665, 126.9780],
+  japan:  [35.6762, 139.6503],
+  usa:    [34.0522, -118.2437],
+  europe: [52.5200, 13.4049]
+};
+const stationsByRegion = {
+  korea: [
+    { name:'Seoul H2 Hub',    addr:'Mapo-daero 12, Seoul',        dist:'0.8',  status:'Open',   price:'₩8,800', type:'700 bar'     },
+    { name:'Gangnam H2 Fast', addr:'Teheran-ro 88, Seoul',        dist:'4.2',  status:'Busy',   price:'₩9,900', type:'700/350 bar' },
+    { name:'Bucheon Refuel',  addr:'Bucheon-ro 41, Gyeonggi',     dist:'12.5', status:'Open',   price:'₩8,500', type:'700 bar'     }
+  ],
+  japan: [
+    { name:'Tokyo Bay Station',    addr:'Chuo-ku 3-chome, Tokyo',     dist:'1.2', status:'Open', price:'¥1,100', type:'700 bar'     },
+    { name:'Shinjuku eco-Station', addr:'Nishi-Shinjuku 1, Tokyo',    dist:'3.8', status:'Open', price:'¥1,250', type:'700/350 bar' }
+  ],
+  usa: [
+    { name:'LA Tech Center H2',  addr:'Wilshire Blvd, Los Angeles', dist:'2.4', status:'Open',   price:'$8.50', type:'700 bar' },
+    { name:'Santa Monica Green', addr:'Ocean Ave, Santa Monica',    dist:'8.1', status:'Closed', price:'$9.00', type:'700 bar' }
+  ],
+  europe: [
+    { name:'Berlin Core Station', addr:'Alexanderplatz, Berlin', dist:'3.1', status:'Open', price:'€12.50', type:'700 bar' },
+    { name:'Hamburg H2 Hub',      addr:'Jungfernstieg, Hamburg', dist:'5.2', status:'Open', price:'€12.80', type:'700 bar' }
+  ]
+};
+
+let osmMap = null;
+let currentMarkers = [];
+let currentRegion = 'korea';
+let currentStationName = '';
+let currentStationAddr = '';
+
+// ── Splash ──
+setTimeout(() => {
+  const s = document.getElementById('splash');
+  if(s){ s.style.opacity='0'; setTimeout(()=>s.style.display='none',600); }
+}, 1800);
+
+// ── [핵심] 앱 시작: 어제 마지막으로 본 탭 복원 ──
+window.addEventListener('DOMContentLoaded', () => {
+  // 프로필 가입일
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date();
+  const el = document.getElementById('profile-joined');
+  if(el) el.textContent = 'Free Plan · Member since ' + months[now.getMonth()] + ' ' + now.getFullYear();
+
+  // localStorage에서 마지막으로 본 탭 불러오기 (없으면 'map')
+  const lastTab = localStorage.getItem('lastViewedTab') || 'map';
+
+  // 히스토리 초기 상태 설정
+  if(!history.state){
+    history.replaceState({ tab: lastTab }, '', '#' + lastTab);
+  }
+
+  // 마지막 탭으로 화면 복원
+  restoreTab(lastTab);
+
+  // 지도 초기화 (DOM 렌더링 후 실행)
+  setTimeout(() => { initLeafletMap(); }, 150);
+});
+
+// ── 탭 전환 (누를 때마다 localStorage 저장) ──
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + tab);
+  const nv = document.getElementById('nav-' + tab);
+  if(pg && nv){
+    pg.classList.add('active');
+    nv.classList.add('active');
+    // 마지막 탭 저장
+    localStorage.setItem('lastViewedTab', tab);
+    history.pushState({ tab: tab }, '', '#' + tab);
+    // 지도 탭으로 돌아오면 OSM 뷰 깨짐 보정
+    if(tab === 'map' && osmMap) osmMap.invalidateSize();
+  }
+}
+
+// ── 탭 복원 (초기 로드 & 뒤로가기용) ──
+function restoreTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + tab);
+  const nv = document.getElementById('nav-' + tab);
+  if(pg && nv){
+    pg.classList.add('active');
+    nv.classList.add('active');
+    localStorage.setItem('lastViewedTab', tab);
+  }
+}
+
+// ── Android 뒤로가기 ──
+window.addEventListener('popstate', function(e){
+  if(e.state && e.state.tab){
+    restoreTab(e.state.tab);
+    if(e.state.tab === 'map' && osmMap) osmMap.invalidateSize();
+  } else {
+    const lastTab = localStorage.getItem('lastViewedTab') || 'map';
+    restoreTab(lastTab);
+  }
+});
+
+// ── OpenStreetMap (Leaflet) 초기화 ──
+function initLeafletMap() {
+  const container = document.getElementById('map');
+  if(!container || osmMap) return;
+  osmMap = L.map('map', { zoomControl: false, attributionControl: true })
+             .setView(regionCenters[currentRegion], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(osmMap);
+  loadMarkers(currentRegion);
+}
+
+// ── 마커 + 리스트 카드 갱신 ──
+function loadMarkers(region) {
+  if(!osmMap) return;
+  // 기존 마커 제거
+  currentMarkers.forEach(m => osmMap.removeLayer(m));
+  currentMarkers = [];
+
+  const stations = stationsByRegion[region] || [];
+  const center   = regionCenters[region];
+  osmMap.setView(center, 11);
+
+  // ✅ 버그 수정: mVertLat 제거, L.marker([lat, lng]) 정상화
+  stations.forEach(st => {
+    const mLat = center[0] + (Math.random() - 0.5) * 0.08;
+    const mLng = center[1] + (Math.random() - 0.5) * 0.08;
+    const m = L.marker([mLat, mLng]).addTo(osmMap);
+    m.bindPopup('<b>' + st.name + '</b><br>' + st.status + ' · ' + st.price + '/kg');
+    m.on('click', () => openStation(st.name, st.addr, st.dist, st.status, st.price, st.type));
+    currentMarkers.push(m);
+  });
+
+  // 통계 갱신
+  const meta = regionMeta[region];
+  if(meta){
+    document.getElementById('stat-total').textContent  = meta.stations;
+    document.getElementById('stat-active').textContent = meta.open;
+  }
+
+  // 하단 리스트 카드 동적 갱신
+  const listContainer = document.getElementById('nearby-list-container');
+  if(listContainer){
+    const headHtml = `<div class="section-head"><div class="section-title">Nearby Stations</div><div class="section-more" onclick="openPro()">View all →</div></div>`;
+    const cardsHtml = stations.map(st => `
+      <div class="station-card" onclick="openStation('${st.name}','${st.addr}','${st.dist}','${st.status}','${st.price}','${st.type}')">
+        <div class="sc-top"><div class="sc-name">${st.name}</div><div class="sc-dist">${st.dist} km</div></div>
+        <div class="sc-meta">
+          <span class="badge ${st.status.toLowerCase()}">● ${st.status}</span>
+          <span class="badge price">${st.price}/kg</span>
+          <span class="badge type">${st.type}</span>
+        </div>
+      </div>`).join('');
+    listContainer.innerHTML = headHtml + cardsHtml;
+  }
+}
+
+// ── 지역 탭 클릭 ──
+document.querySelectorAll('.region-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.region-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const regKey = t.getAttribute('data-region');
+    currentRegion = regKey;
+    loadMarkers(regKey);
+    const d = regionMeta[regKey];
+    if(d){
+      const nn = document.getElementById('near-name');
+      const nd = document.getElementById('near-dist');
+      const np = document.getElementById('near-price');
+      const ns = document.getElementById('near-status');
+      if(nn) nn.textContent = d.nearest;
+      if(nd) nd.textContent = d.dist + ' km away';
+      if(np) np.textContent = d.price;
+      if(ns) ns.textContent = d.open > 0 ? 'Open' : 'Closed';
+    }
+  });
+});
+
+// ── 모달 ──
+function openStation(name, addr, dist, status, price, type) {
+  currentStationName = name;
+  currentStationAddr = addr;
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-addr').textContent = addr + ' · ' + dist + 'km away';
+  const stEl = document.getElementById('modal-status');
+  if(stEl){
+    stEl.textContent = status;
+    stEl.style.color = status==='Open' ? 'var(--green)' : status==='Busy' ? 'var(--orange)' : 'var(--gray)';
+  }
+  document.getElementById('modal-price').textContent = price + '/kg';
+  document.getElementById('modal-type').textContent  = type;
+  document.getElementById('stationModal').classList.add('open');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function openPro(){ document.getElementById('proModal').classList.add('open'); }
+
+// ── 길찾기 (OpenStreetMap - 무료) ──
+function openDirections() {
+  if(!currentStationName) return;
+  const query = encodeURIComponent(currentStationName + ' ' + currentStationAddr);
+  window.open('https://www.openstreetmap.org/search?query=' + query, '_blank');
+}
+
+// ── 즐겨찾기 (localStorage) ──
+function saveToFavorites() {
+  if(!currentStationName) return;
+  try {
+    let favs = JSON.parse(localStorage.getItem('favStations') || '[]');
+    if(!favs.includes(currentStationName)){
+      favs.push(currentStationName);
+      localStorage.setItem('favStations', JSON.stringify(favs));
+      alert('⭐ ' + currentStationName + ' saved to Favorites!\nTotal: ' + favs.length + ' station(s)');
+    } else {
+      alert('Already in Favorites: ' + currentStationName);
+    }
+  } catch(e) {
+    alert('⭐ Saved: ' + currentStationName);
+  }
+}
+
+function startFreeTrial() {
+  alert('⚡ Google Play Billing integration coming soon!');
+  closeModal('proModal');
+}
+
+// ── 계산기 ──
+function doCalc() {
+  const dist     = parseFloat(document.getElementById('calcDist').value);
+  const h2kg     = parseFloat(document.getElementById('calcH2').value);
+  const h2price  = parseFloat(document.getElementById('calcPrice').value);
+  const gasPrice = parseFloat(document.getElementById('calcGas').value);
+  if(!dist||dist<=0||!h2kg||h2kg<=0||!h2price||h2price<=0||!gasPrice||gasPrice<=0) return;
+  const h2cost  = Math.round((dist/100)*h2kg*h2price);
+  const gasCost = Math.round((dist/12)*gasPrice);
+  const save    = Math.round((1-h2cost/gasCost)*100);
+  document.getElementById('calcResult').innerHTML =
+    `<div class="r-val">₩${h2cost.toLocaleString()}</div>
+     <div class="r-lbl">H₂ Trip Cost · vs Gasoline ₩${gasCost.toLocaleString()} · ${save>=0?'Save '+save+'%':'+'+(Math.abs(save))+'% more'}</div>`;
+}
+
+// ── 설정 ──
+document.querySelectorAll('.setting-item').forEach(item => {
+  item.addEventListener('click', function(){
+    const label = this.querySelector('.si-label');
+    if(!label) return;
+    const name = label.textContent.trim();
+    if(name==='Privacy Policy'){
+      window.open('https://dgim17672-dotcom.github.io/aicheck-privacy/', '_blank');
+    } else if(name==='About HydrogenMap'){
+      alert('HydrogenMap v1.0\n\nFind hydrogen fuel stations worldwide.\n© 2026 HydrogenMap');
+    } else {
+      alert('⚙️ ' + name + ' — coming soon!');
+    }
+  });
+});
+</script>
+</body>
+</html>
